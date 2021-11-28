@@ -2,15 +2,16 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "raycast-docker-context",
   "title": "raycast-docker-context",
-  "description": "",
-  "icon": "command-icon.png",
-  "author": "Álvaro de la Vega",
+  "description": "Manage Docker Contexts with Raycast",
+  "icon": "docker-icon.png",
+  "author": "avegao",
   "license": "MIT",
   "commands": [
     {
       "name": "docker-context",
-      "title": "docker-context",
-      "description": "",
+      "title": "Manage Context",
+      "subtitle": "Docker",
+      "description": "Manager Docker Contexts",
       "mode": "view"
     }
   ],
