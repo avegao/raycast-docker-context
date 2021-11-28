@@ -2,15 +2,15 @@ import { $ } from "zx";
 import { useEffect, useState } from "react";
 import {
   ActionPanel,
-  Color,
+  environment,
   getApplications,
   Icon,
   List,
+  render,
   showHUD,
   showToast,
   Toast,
-  ToastStyle,
-  useNavigation
+  ToastStyle
 } from "@raycast/api";
 
 interface DockerContext {
@@ -31,19 +31,10 @@ interface State {
 export default function Command() {
   const [state, setState] = useState<State>({});
 
-  async function getContextList(): Promise<void> {
+  async function setContextList(): Promise<void> {
     try {
-      const dockerApp = (await getApplications())
-        .find((application) => application.name == "Docker");
-
-      if (dockerApp === undefined) {
-        throw new Error('Docker Desktop not installed');
-      }
-
-      const dockerExecutable = `${dockerApp.path}/Contents/Resources/bin/docker`;
-
-      const accountsCommand = await $`${dockerExecutable} context list --format=json`;
-      const contextList = JSON.parse(accountsCommand.stdout);
+      const dockerExecutable = await getDockerExecutable();
+      const contextList = await getContextList(dockerExecutable);
 
       setState({ contextList, dockerExecutable });
     } catch (e) {
@@ -52,7 +43,7 @@ export default function Command() {
   }
 
   useEffect(() => {
-    getContextList();
+    setContextList();
   }, []);
 
   return (
@@ -83,9 +74,13 @@ function Actions(props: { context: DockerContext, dockerExecutable: string | und
 
       const output = command.stdout;
 
-      console.log(output);
+      if (environment.isDevelopment) {
+        console.log(`Docker context use output: ${output}`);
+      }
 
       await showHUD(`Docker context changed to ${context.Name}`);
+
+      render(<Command />);
     } catch (e) {
       await catchError(e as Error);
     }
@@ -94,7 +89,7 @@ function Actions(props: { context: DockerContext, dockerExecutable: string | und
   return (
     <ActionPanel title={context.Name}>
       <ActionPanel.Item
-        icon={{ source: Icon.Circle, tintColor: Color.Blue }}
+        icon={{ source: Icon.Star }}
         title={`Use ${context.Name} as context`}
         onAction={() => setDockerContext(context)}
       />
@@ -103,5 +98,27 @@ function Actions(props: { context: DockerContext, dockerExecutable: string | und
 }
 
 function catchError(err: Error): Promise<Toast> {
-  return showToast(ToastStyle.Failure, 'Something went wrong', err.message);
+  return showToast(ToastStyle.Failure, "Something went wrong", err.message);
+}
+
+async function getDockerExecutable(): Promise<string> {
+  const dockerApp = (await getApplications())
+    .find((application) => application.name == "Docker");
+
+  if (dockerApp === undefined) {
+    throw new Error("Docker Desktop not installed");
+  }
+
+  return `${dockerApp.path}/Contents/Resources/bin/docker`;
+}
+
+async function getContextList(dockerExecutable: string): Promise<DockerContext[]> {
+  const processOutput = await $`${dockerExecutable} context list --format=json`;
+  const contextList = JSON.parse(processOutput.stdout);
+
+  if (environment.isDevelopment) {
+    console.log(`Docker context list output: ${processOutput.stdout}`);
+  }
+
+  return contextList;
 }
