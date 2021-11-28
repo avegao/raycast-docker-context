@@ -86,8 +86,6 @@ function Actions(props: { context: DockerContext, dockerExecutable: string | und
       console.log(output);
 
       await showHUD(`Docker context changed to ${context.Name}`);
-
-      useNavigation().push();
     } catch (e) {
       await catchError(e as Error);
     }
